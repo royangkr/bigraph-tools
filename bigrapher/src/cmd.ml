@@ -1,3 +1,4 @@
+
 open Format
 open Utils
 open Cmdliner
@@ -15,6 +16,7 @@ type settings = {
   mutable export_graph : file option;
   mutable export_lab : file option;
   mutable export_prism : file option;
+  mutable export_decls : file option;
   mutable export_states : path option;
   mutable export_states_flag : bool;
   mutable export_state_rewards : path option;
@@ -26,12 +28,13 @@ type settings = {
   mutable quiet : bool;
   mutable seed : int option;
   mutable steps : int;
-  mutable steps_flag : bool;
   mutable time : float;
-  mutable time_flag : bool;
   mutable verb : bool;
+  mutable warn : bool;
   mutable colors : bool;
   mutable running_time : bool;
+  mutable initfile : file option;
+  mutable checkpoint: int option;
   mutable solver : Bigraph.Solver.solver_t;
 }
 
@@ -45,6 +48,7 @@ let defaults =
     export_graph = None;
     export_lab = None;
     export_prism = None;
+    export_decls = None;
     export_states = None;
     export_states_flag = false;
     export_state_rewards = None;
@@ -56,16 +60,17 @@ let defaults =
     quiet = false;
     seed = None;
     steps = 1000;
-    steps_flag = false;
     time = 1000.0;
-    time_flag = false;
     verb = false;
+    warn = false;
     colors = true;
     running_time = false;
-    solver = Bigraph.Solver.MSAT (* MiniSAT *);
+    initfile = None;
+    checkpoint = None;
+    solver = Bigraph.Solver.MCARD (* MiniCARD *);
   }
 
-type cmd_t = [ `check | `full | `sim | `exit ]
+type cmd_t = Check | Full | Sim | Exit
 
 (* Stand alone options *)
 let print_table fmt rows ?(offset = 0) f_l f_r =
@@ -127,9 +132,15 @@ let parse_formats s =
 let parse_solver_type = function
   | "MCARD" -> Bigraph.Solver.MCARD
   | "MSAT" -> Bigraph.Solver.MSAT
-  | _ -> Bigraph.Solver.MSAT
+  | x ->
+      fprintf err_formatter "@[<v>%s: %s@]%!"
+        (warn_opt defaults.colors)
+        ("\"" ^ x ^ "\" is not a recognised solver. Using MiniCARD instead.");
+      Bigraph.Solver.MCARD
 
-(* Defaults to MiniSAT *)
+let supported_solvers_str =
+  "Supported solvers are `MSAT' (MiniSAT) and `MCARD' (MiniCARD)."
+
 
 let eval_config fmt () =
   let config_str fmt () =
@@ -137,16 +148,16 @@ let eval_config fmt () =
       [
         ( "colors",
           fun fmt () ->
-            ( match Sys.getenv_opt "BIGNOCOLORS" with
+            (match Sys.getenv_opt "BIGNOCOLORS" with
             | None -> ()
-            | Some _ -> defaults.colors <- false );
+            | Some _ -> defaults.colors <- false);
             fprintf fmt "@[<hov>%b@]" defaults.colors );
         ( "consts",
           fun fmt () ->
             fprintf fmt "@[<hov>%s@]"
-              ( match Ast.string_of_consts defaults.consts with
+              (match Ast.string_of_consts defaults.consts with
               | "" -> "-"
-              | s -> s ) );
+              | s -> s) );
         ("debug", fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.debug);
         ( "export_graph",
           fun fmt () ->
@@ -179,16 +190,16 @@ let eval_config fmt () =
           fun fmt () -> fprintf fmt "@[<hov>%d@]" defaults.max_states );
         ( "out_format",
           fun fmt () ->
-            ( match Sys.getenv_opt "BIGFORMAT" with
+            (match Sys.getenv_opt "BIGFORMAT" with
             | None -> ()
-            | Some x -> defaults.out_format <- parse_formats x );
+            | Some x -> defaults.out_format <- parse_formats x);
             fprintf fmt "@[<hov>%s@]" (string_of_format defaults.out_format)
         );
         ( "quiet",
           fun fmt () ->
-            ( match Sys.getenv_opt "BIGQUIET" with
+            (match Sys.getenv_opt "BIGQUIET" with
             | None -> ()
-            | Some _ -> defaults.quiet <- true );
+            | Some _ -> defaults.quiet <- true);
             fprintf fmt "@[<hov>%b@]" defaults.quiet );
         ( "running_time",
           fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.running_time );
@@ -199,19 +210,30 @@ let eval_config fmt () =
             | Some x -> fprintf fmt "@[<hov>%d@]" x );
         ( "solver",
           fun fmt () ->
-            ( match Sys.getenv_opt "BIGSOLVER" with
+            (match Sys.getenv_opt "BIGSOLVER" with
             | None -> ()
-            | Some x -> defaults.solver <- parse_solver_type x );
+            | Some x -> defaults.solver <- parse_solver_type x);
             fprintf fmt "@[<hov>%s@]" (string_of_solver_type defaults.solver)
         );
         ("steps", fun fmt () -> fprintf fmt "@[<hov>%d@]" defaults.steps);
         ("time", fun fmt () -> fprintf fmt "@[<hov>%g@]" defaults.time);
         ( "verb",
           fun fmt () ->
-            ( match Sys.getenv_opt "BIGVERBOSE" with
+            (match Sys.getenv_opt "BIGVERBOSE" with
             | None -> ()
-            | Some _ -> defaults.verb <- true );
+            | Some _ -> defaults.verb <- true);
             fprintf fmt "@[<hov>%b@]" defaults.verb );
+        ("warn", fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.warn);
+        ( "initfile",
+          fun fmt () ->
+            match defaults.initfile with
+            | None -> fprintf fmt "@[<hov>%s@]" "-"
+            | Some x -> fprintf fmt "@[<hov>%s@]" x );
+        ( "checkpoint",
+          fun fmt () ->
+            match defaults.checkpoint with
+            | None -> fprintf fmt "@[<hov>%s@]" "-"
+            | Some x -> fprintf fmt "@[<hov>%d@]" x )
       ]
     in
     print_table fmt conf (fun (x, _) -> x) (fun fmt (_, f) -> f fmt ())
@@ -243,7 +265,7 @@ let check_dot () =
       defaults.out_format <- default_formats;
       fprintf err_formatter "@[<v>%s Warning: %s@]"
         (warn_opt defaults.colors)
-        dot_msg )
+        dot_msg)
 
 let const_conv =
   let lexer = Genlex.make_lexer [ "=" ] in
@@ -279,7 +301,7 @@ let const_conv =
                    d_exp = EStr (Str_val (v, Loc.dummy_loc));
                    d_loc = Loc.dummy_loc;
                  })
-        | _ -> Error (`Msg "Could not parse assignment") )
+        | _ -> Error (`Msg "Could not parse assignment"))
     | _ -> Error (`Msg "Could not parse assignment")
   in
   let print_format pf = function
@@ -314,14 +336,15 @@ let empty_to_none = function
   | Some _ as s -> s
   | None -> None
 
-let copts consts debug ext graph lbls prism quiet states srew trew verbose
-    nocols rtime solver =
+let copts consts debug ext graph lbls prism decls quiet states srew trew
+    verbose warn nocols rtime solver initf checkpoint =
   defaults.consts <- consts;
   defaults.debug <- debug;
   defaults.out_format <- ext;
   defaults.export_graph <- graph;
   defaults.export_lab <- lbls;
   defaults.export_prism <- prism;
+  defaults.export_decls <- decls;
   defaults.quiet <- quiet;
   (* States have extra handling to ensure that the directory is inferred
    * from export-ts if required *)
@@ -330,11 +353,15 @@ let copts consts debug ext graph lbls prism quiet states srew trew verbose
   defaults.export_state_rewards <- empty_to_none srew;
   defaults.export_transition_rewards <- empty_to_none trew;
   defaults.verb <- verbose;
+  defaults.warn <- warn;
   defaults.colors <- not nocols;
   defaults.running_time <- rtime;
-  defaults.solver <- parse_solver_type solver
+  defaults.solver <- parse_solver_type solver;
+  defaults.initfile <- initf;
+  defaults.checkpoint <- checkpoint
 
 let copts_t =
+  let vopt_int = Arg.opt ~vopt:(Some 0) (Arg.some Arg.int) None in
   let opt_str = Arg.opt (Arg.some Arg.string) None in
   let vopt_str = Arg.opt ~vopt:(Some "") (Arg.some Arg.string) None in
   let debug = Arg.(value & flag & info [ "debug" ]) in
@@ -354,7 +381,7 @@ let copts_t =
       "A comma-separated list of output formats.\n\
       \               Supported formats are `dot', `json', `svg' and `txt'."
     in
-    let env = Arg.env_var "BIGFORMAT" ~doc in
+    let env = Cmd.Env.info "BIGFORMAT" ~doc in
     Arg.(
       value
       & opt (list (conv fconv)) [ Dot ]
@@ -376,6 +403,10 @@ let copts_t =
     in
     Arg.(value & opt_str & info [ "p"; "export-prism" ] ~docv:"FILE" ~doc)
   in
+  let decls =
+    let doc = "Export each declaration to a file in $(docv)." in
+    Arg.(value & opt_str & info [ "d"; "export-decls" ] ~docv:"DIR" ~doc)
+  in
   let srew =
     let doc = "Export state rewards in PRISM srew format to $(docv)." in
     Arg.(
@@ -390,7 +421,7 @@ let copts_t =
   in
   let quiet =
     let doc = "Disable progress indicator." in
-    let env = Arg.env_var "BIGQUIET" ~doc in
+    let env = Cmd.Env.info "BIGQUIET" ~doc in
     Arg.(value & flag & info [ "q"; "quiet" ] ~doc ~env)
   in
   let states =
@@ -404,41 +435,47 @@ let copts_t =
   in
   let verbose =
     let doc = "Be more verbose." in
-    let env = Arg.env_var "BIGVERBOSE" ~doc in
+    let env = Cmd.Env.info "BIGVERBOSE" ~doc in
     Arg.(value & flag & info [ "v"; "verbose" ] ~doc ~env)
+  in
+  let warn =
+    let doc = "Enable useful warnings" in
+    Arg.(value & flag & info [ "w"; ] ~doc)
   in
   let nocols =
     let doc = "Disable colored output." in
-    let env = Arg.env_var "BIGNOCOLORS" ~doc in
+    let env = Cmd.Env.info "BIGNOCOLORS" ~doc in
     Arg.(value & flag & info [ "n"; "no-colors" ] ~doc ~env)
   in
   let solver =
     let doc =
-      "Select solver for matching engine.\n\
-      \               Supported solvers are `MSAT' (MiniSAT) and `MCARD' \
-       (MiniCARD)."
+      "Select solver for matching engine.\n" ^ supported_solvers_str
     in
-    let env = Arg.env_var "BIGSOLVER" ~doc in
-    Arg.(value & opt string "MSAT" & info [ "solver" ] ~doc ~env)
+    let env = Cmd.Env.info "BIGSOLVER" ~doc in
+    Arg.(value & opt string "MCARD" & info [ "solver" ] ~doc ~env)
+  in
+  let initfile =
+    let doc = "Use bigraph specified in $(docv) as the intial state." in
+    Arg.(value & opt_str & info [ "initfile"; "i" ] ~docv:"FILE" ~doc)
+  in
+  let checkpoint =
+    let doc = "Checkpoint (approximately) every $(docv) state to txt." in
+    Arg.(value & vopt_int & info [ "checkpoint" ] ~docv:"ith" ~doc)
   in
   Term.(
-    const copts $ consts $ debug $ ext $ graph $ lbls $ prism $ quiet
-    $ states $ srew $ trew $ verbose $ nocols $ rtime $ solver)
+    const copts $ consts $ debug $ ext $ graph $ lbls $ prism
+    $ decls $ quiet $ states $ srew $ trew $ verbose $ warn
+    $ nocols $ rtime $ solver $ initfile $ checkpoint)
 
 (* Sim options *)
 let sim_opts time steps seed =
-  defaults.seed <- seed;
-  match time with
-  | Some t ->
-      defaults.time_flag <- true;
-      defaults.time <- t
-  | None -> (
-      ();
-      match steps with
-      | Some s ->
-          defaults.steps_flag <- true;
-          defaults.steps <- s
-      | None -> () )
+  defaults.time <- time;
+  defaults.steps <- steps;
+  match seed with
+  | None ->
+    (Random.self_init ();
+     defaults.seed <- Some (Random.bits ()))
+  | Some _ as s -> defaults.seed <- s
 
 let sim_opts_t =
   let time =
@@ -448,7 +485,7 @@ let sim_opts_t =
     in
     Arg.(
       value
-      & opt (some float) None
+      & opt float (defaults.time)
       & info [ "T"; "simulation-time" ] ~docv:"FLOAT" ~doc)
   in
   let steps =
@@ -458,7 +495,7 @@ let sim_opts_t =
     in
     Arg.(
       value
-      & opt (some int) None
+      & opt int (defaults.steps)
       & info [ "S"; "simulation-steps" ] ~docv:"INT" ~doc)
   in
   let seed =
@@ -475,7 +512,9 @@ let full_opts states = defaults.max_states <- states
 let full_opts_t =
   let states =
     let doc = "Set the maximum number of states" in
-    Arg.(value & opt int 1000 & info [ "M"; "max-states" ] ~docv:"INT" ~doc)
+    Arg.(value
+      & opt int (defaults.max_states)
+      & info [ "M"; "max-states" ] ~docv:"INT" ~doc)
   in
   Term.(const full_opts $ states)
 
@@ -484,37 +523,40 @@ let run f typ =
   check_dot ();
   if check_states () then (
     defaults.model <- f;
-    typ )
-  else `exit
+    typ)
+  else Exit
 
-let run_sim _copts _sopts f = run f `sim
+let run_sim _copts _sopts f = run f Sim
 
-let run_check _copts f = run f `check
+let run_check _copts f = run f Check
 
-let run_full _copts _fopts f = run f `full
+let run_full _copts _fopts f = run f Full
 
 let mdl_file = Arg.(value & pos 0 (some file) None & info [] ~docv:"FILE")
 
 let sim_cmd =
   let doc = "Simulate a model" in
-  ( Term.(const run_sim $ copts_t $ sim_opts_t $ mdl_file),
-    Term.info "sim" ~doc ~exits:Term.default_exits ~man:[] )
+  Cmd.v
+    (Cmd.info "sim" ~doc ~exits:Cmd.Exit.defaults ~man:[])
+    (Term.(const run_sim $ copts_t $ sim_opts_t $ mdl_file))
 
 let check_cmd =
   let doc = "Parse a model and check its validity" in
-  ( Term.(const run_check $ copts_t $ mdl_file),
-    Term.info "validate" ~doc ~exits:Term.default_exits ~man:[] )
+  Cmd.v
+    (Cmd.info "validate" ~doc ~exits:Cmd.Exit.defaults ~man:[])
+    (Term.(const run_check $ copts_t $ mdl_file))
 
 let full_cmd =
   let doc = "Compute the transition system of a model" in
-  ( Term.(const run_full $ copts_t $ full_opts_t $ mdl_file),
-    Term.info "full" ~doc ~exits:Term.default_exits ~man:[] )
+  Cmd.v
+    (Cmd.info "full" ~doc ~exits:Cmd.Exit.defaults ~man:[])
+    (Term.(const run_full $ copts_t $ full_opts_t $ mdl_file))
 
 let run_default cfg =
   match cfg with
   | true ->
       eval_config Format.std_formatter ();
-      `Ok `exit
+      `Ok Exit
   | false -> `Help (`Pager, None)
 
 let default_cmd =
@@ -522,24 +564,20 @@ let default_cmd =
     let doc = "Print a summary of your configuration" in
     Arg.(value & flag & info [ "C"; "config" ] ~doc)
   in
+  Term.(ret (const run_default $ cfg))
+
+let cmds = [ check_cmd; sim_cmd; full_cmd ]
+
+let parse_cmds =
   let doc =
     "An implementation of Bigraphical Reactive System (BRS)\n\
     \             that supports bigraphs with sharing, stochastic reaction \
      rules,\n\
     \             rule priorities and functional rules."
+
   in
-  ( Term.(ret (const run_default $ cfg)),
-    Term.info "bigrapher" ~version:Version.version ~doc
-      ~exits:Term.default_exits ~man:[] )
-
-let cmds = [ check_cmd; sim_cmd; full_cmd ]
-
-let parse_cmds =
-  let res = Term.(eval_choice default_cmd cmds) in
-  match res with
-  | `Ok e -> e
-  | _ ->
-      Term.exit res;
-      `check
-
-(* This check is never reached *)
+  (Cmd.group
+    (Cmd.info "bigrapher" ~version:Version.version ~doc
+       ~exits:Cmd.Exit.defaults ~man:[])
+    ~default:default_cmd cmds)
+  |> Cmd.eval_value

@@ -499,11 +499,13 @@ let set_output_ch () =
   if Cmd.(defaults.quiet) then Format.str_formatter else Format.std_formatter
 
 let () =
-  let exec_type = Cmd.parse_cmds in
   (* Allow early exit, e.g. when the config is to be printed *)
-  match exec_type with
-  | `exit -> exit 1
-  | _ -> (
+  match Cmd.parse_cmds with
+   Ok `Ok Cmd.Exit
+  | Error _ -> exit 1
+  | Ok `Version
+  | Ok `Help -> exit 0
+  | Ok `Ok exec_type -> (
       ignore_flags ();
       try
         let fmt = set_output_ch () in
@@ -609,10 +611,22 @@ let () =
           match Cmd.(defaults.solver) with
           | Bigraph.Solver.MSAT ->
               let module S = Selector (T) (Solver.Make_SAT (Solver.MS)) in
-              S.run fmt Cmd.(defaults.colors) m exec_type
+              let exec_variant = match exec_type with
+                | Check -> `check
+                | Exit -> `exit
+                | Full -> `full
+                | Sim -> `sim
+              in
+              S.run fmt Cmd.(defaults.colors) m exec_variant
           | Bigraph.Solver.MCARD ->
               let module S = Selector (T) (Solver.Make_SAT (Solver.MC)) in
-              S.run fmt Cmd.(defaults.colors) m exec_type
+              let exec_variant = match exec_type with
+                | Check -> `check
+                | Exit -> `exit
+                | Full -> `full
+                | Sim -> `sim
+              in
+              S.run fmt Cmd.(defaults.colors) m exec_variant
         with
         | Place.NOT_PRIME ->
             close_progress_bar ();
