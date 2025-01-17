@@ -1,0 +1,82 @@
+(executables
+ (names test_parser test_speed)
+ (libraries bigraph CI_utils unix utils))
+
+(rule
+ (alias runtest)
+ (deps
+  (:exe test_parser.exe)
+  (glob_files ../examples/*.big)
+  (glob_files files/*.reference)
+  (:list files/parser.in))
+ (action
+  (progn
+   (run %{bin:mkdir} -p %{project_root}/shippable/testresults)
+   (run %{exe} %{bin:bigrapher} %{list} %{project_root}/shippable/testresults
+     parser-junit.xml)
+   (setenv
+    BIGSOLVER
+    MCARD
+    (run %{exe} %{bin:bigrapher} %{list}
+      %{project_root}/shippable/testresults parser-junit-MCARD.xml)))))
+
+(rule
+ (deps
+  (:model ../examples/prob_wsn.big))
+ (target prob_wsn.tra)
+ (action
+  (run %{bin:bigrapher} full -q -p %{target} %{model})))
+
+(rule
+ (alias runtest)
+ (deps
+  (:ref files/prob_wsn.reference.tra)
+  (:out prob_wsn.tra))
+ (action
+  (diff %{ref} %{out})))
+
+(rule
+ (deps
+  (:model ../examples/mdp_wsn.big))
+ (target mdp_wsn.tra)
+ (action
+  (run %{bin:bigrapher} full -q -p %{target} %{model})))
+
+(rule
+ (alias runtest)
+ (deps
+  (:ref files/mdp_wsn.reference.tra)
+  (:out mdp_wsn.tra))
+ (action
+  (diff %{ref} %{out})))
+
+(rule
+ (deps
+  (:model ../examples/stoch_occ.big))
+ (target stoch_occ.tra)
+ (action
+  (run %{bin:bigrapher} full -q -p %{target} %{model})))
+
+(rule
+ (alias runtest)
+ (deps
+  (:ref files/stoch_occ.reference.tra)
+  (:out stoch_occ.tra))
+ (action
+  (diff %{ref} %{out})))
+
+(alias
+ (name speed)
+ (deps
+  (file ../examples/rts_cts.big)
+  (file ../examples/hospital.big)
+  (file ../examples/conditional_turn_taking.big)
+  (file ../examples/savannah-general.big))
+ (package bigrapher))
+
+(rule
+ (alias speed)
+ (deps
+  (:exe test_speed.exe))
+ (action
+  (run %{exe} %{bin:bigrapher})))

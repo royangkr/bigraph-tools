@@ -1,0 +1,18 @@
+(executable
+ (name test)
+ (libraries bigraph big_json))
+
+(rule
+ (deps
+  (:exe test.exe))
+ (action
+  (with-stdout-to
+   test.output
+   (run %{exe}))))
+
+(rule
+ (alias runtest)
+ (deps
+  (:ref test.reference))
+ (action
+  (diff %{ref} test.output)))

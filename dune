@@ -1,0 +1,11 @@
+(env
+ (default
+  (flags
+   (:standard -g)))
+ (release
+  (ocamlopt_flags
+   (:standard -O3 -noassert -inline 30)))
+ (static
+  (flags -cclib -static -cclib -lstdc++)
+  (ocamlopt_flags
+   (:standard -O3 -noassert -inline 30))))
