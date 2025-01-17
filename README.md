@@ -1,5 +1,9 @@
 # Bigraph-Tools #
 
+From mseve/bigrapher docker image
+
+updated to be compatible with 1.3.0 cmdliner
+
 Authors: [Michele Sevegnani](http://www.dcs.gla.ac.uk/~michele), [Blair Archibald](http://www.blairarchibald.co.uk)
 
 [![Run Status](https://api.shippable.com/projects/5e6fa6aa5f10de0007bc21a1/badge?branch=master)]()
