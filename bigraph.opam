@@ -12,6 +12,7 @@ tags: ["bigraphs" "rewriting" "org:dcs"]
 homepage: "http://www.dcs.gla.ac.uk/~michele/bigrapher.html"
 doc: "http://www.dcs.gla.ac.uk/~michele/doc/index.html"
 depends: [
+  "ocaml"
   "dune" {build & >= "2.0.0"}
   "ocaml" {>= "4.07"}
   "minisat" {>= "0.5.3"}

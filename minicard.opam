@@ -9,6 +9,7 @@ tags: ["Pseudo-boolean solver" "org:dcs"]
 homepage: "http://www.dcs.gla.ac.uk/~michele/bigrapher.html"
 doc: "http://www.dcs.gla.ac.uk/~michele/doc/index.html"
 depends: [
+  "ocaml"
   "dune" {build & >= "2.0.0"}
   "dune-configurator" {build}
   "odoc" {with-doc}
