@@ -27,4 +27,7 @@ build: [
     "@doc" {with-doc}
   ]
 ]
+depexts: [
+  "minisat"
+]
 dev-repo: "https://bitbucket.org/uog-bigraph/bigraph-tools/"

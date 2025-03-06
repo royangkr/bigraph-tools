@@ -27,4 +27,7 @@ build: [
     "@doc" {with-doc}
   ]
 ]
+depexts: [
+  "zlib"
+]
 dev-repo: "https://bitbucket.org/uog-bigraph/bigraph-tools/"
