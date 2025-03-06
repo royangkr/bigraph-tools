@@ -29,6 +29,6 @@ build: [
   ]
 ]
 depexts: [
-  "minisat"
+  "minisat" { os-distribution = "nixos" }
 ]
 dev-repo: "https://bitbucket.org/uog-bigraph/bigraph-tools/"

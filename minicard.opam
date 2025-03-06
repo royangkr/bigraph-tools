@@ -29,6 +29,6 @@ build: [
   ]
 ]
 depexts: [
-  "zlib"
+  "zlib" { os-distribution = "nixos" }
 ]
 dev-repo: "https://bitbucket.org/uog-bigraph/bigraph-tools/"
