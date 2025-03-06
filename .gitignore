@@ -2,7 +2,6 @@
 _build
 
 # Generated files
-*.opam
 *.install
 *.merlin
 *.tar.gz
