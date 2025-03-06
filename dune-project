@@ -1,4 +1,5 @@
 (lang dune 2.5)
+(name bigrapher)
 (source (uri https://bitbucket.org/uog-bigraph/bigraph-tools/))
 (license BSD-3-Clause)
 (authors "Michele Sevegnani" "Blair Archibald")

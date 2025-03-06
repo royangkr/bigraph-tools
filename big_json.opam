@@ -14,6 +14,7 @@ tags: ["bigraphs" "json" "codec" "org:dcs"]
 homepage: "http://www.dcs.gla.ac.uk/~michele/bigrapher.html"
 doc: "http://www.dcs.gla.ac.uk/~michele/doc/index.html"
 depends: [
+  "ocaml"
   "dune" {build & >= "2.0.0"}
   "jsonm" {>= "1.0.1"}
   "bigraph" {>= "1.3.1"}
