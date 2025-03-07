@@ -34,4 +34,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "https://bitbucket.org/uog-bigraph/bigraph-tools/"
+dev-repo: "git+https://bitbucket.org/uog-bigraph/bigraph-tools/"
