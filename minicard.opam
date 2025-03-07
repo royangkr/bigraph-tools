@@ -30,5 +30,6 @@ build: [
 ]
 depexts: [
   "zlib" { os-distribution = "nixos" }
+  "libbz2-dev" { os-family = "ubuntu" }
 ]
 dev-repo: "https://bitbucket.org/uog-bigraph/bigraph-tools/"
