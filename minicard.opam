@@ -29,3 +29,7 @@ build: [
   ]
 ]
 dev-repo: "git+https://github.com/royangkr/bigraph-tools.git"
+depexts: [
+  ["zlib"] { os-distribution = "nixos" }
+  ["zlib1g-dev"] { os-family = "debian" | os-family = "ubuntu" }
+]

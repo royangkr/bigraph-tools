@@ -1,0 +1,4 @@
+depexts: [
+  ["zlib"] { os-distribution = "nixos" }
+  ["zlib1g-dev"] { os-family = "debian" | os-family = "ubuntu" }
+]
