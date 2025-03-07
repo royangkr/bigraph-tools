@@ -39,7 +39,7 @@ and lhs =
    ({}, {d}, {(2, 1), (3, 1), (4, 1)})\n\
    ({}, {x}, {(4, 1)})" |> Big.of_string
 
-and rhs =
+(* and rhs =
   "{(0, M:2),(1, M:2),(2, M:2),(3, M:2),(4, ND:5)}\n\
    3 5 0\n\
    11000\n\
@@ -54,7 +54,7 @@ and rhs =
    ({}, {b}, {(0, 1), (1, 1), (4, 1)})\n\
    ({}, {c}, {(1, 1), (2, 1), (4, 1)})\n\
    ({}, {d}, {(2, 1), (3, 1), (4, 1)})\n\
-   ({}, {x}, {(0, 1), (4, 1)})" |> Big.of_string
+   ({}, {x}, {(0, 1), (4, 1)})" |> Big.of_string *)
 
 let occ_to_triple Solver.{ nodes; edges; hyper_edges } =
   (nodes, edges, hyper_edges)

@@ -5,15 +5,15 @@ synopsis:
   "Library to programmatically manipulate bigraphs and Bigraphical Reactive Systems"
 description:
   "bigraph is a library to programmaticaly manipulate bigraphs, reaction rules and Bigraphical Reactive Systems (BRS). It supports both bigraphs and bigraphs with sharing, probabilistic and stochastic reaction rules, rule priorities, rules with instantiation maps, parameterised controls, simulation, exhaustive state space exploration, export to probabilistic model checker PRISM, and predicate checking."
-maintainer: ["michele.sevegnani@glasgow.ac.uk"]
+maintainer: ["Roy Ang"]
 authors: ["Michele Sevegnani" "Blair Archibald" "Paulius Dilkas"]
 license: "BSD-3-Clause"
 tags: ["bigraphs" "rewriting" "org:dcs"]
-homepage: "http://www.dcs.gla.ac.uk/~michele/bigrapher.html"
-doc: "http://www.dcs.gla.ac.uk/~michele/doc/index.html"
+homepage: "https://github.com/royangkr/bigraph-tools"
+doc: "https://github.com/royangkr/bigraph-tools"
+bug-reports: "https://github.com/royangkr/bigraph-tools/issues"
 depends: [
-  "ocaml"
-  "dune" {build & >= "2.0.0"}
+  "dune" {>= "3.0"}
   "ocaml" {>= "4.07"}
   "minisat" {>= "0.5.3"}
   "minicard" {>= "0.1.0"}
@@ -23,7 +23,7 @@ conflicts: [
   "bigrapher" {<= "1.6.1"}
 ]
 build: [
-  ["dune" "subst"] {pinned}
+  ["dune" "subst"] {dev}
   [
     "dune"
     "build"
@@ -36,4 +36,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "git+https://bitbucket.org/uog-bigraph/bigraph-tools/"
+dev-repo: "git+https://github.com/royangkr/bigraph-tools.git"

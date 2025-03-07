@@ -2,20 +2,20 @@
 opam-version: "2.0"
 version: "0.1.0"
 synopsis: "Bindings for the cardinality solver MiniCARD"
-maintainer: ["michele.sevegnani@glasgow.ac.uk"]
-authors: ["Michele Sevegnani" "Blair Archibald"]
+maintainer: ["Roy Ang"]
+authors: ["Roy Ang"]
 license: "BSD-3-Clause"
 tags: ["Pseudo-boolean solver" "org:dcs"]
-homepage: "http://www.dcs.gla.ac.uk/~michele/bigrapher.html"
-doc: "http://www.dcs.gla.ac.uk/~michele/doc/index.html"
+homepage: "https://github.com/royangkr/bigraph-tools"
+doc: "https://github.com/royangkr/bigraph-tools"
+bug-reports: "https://github.com/royangkr/bigraph-tools/issues"
 depends: [
-  "ocaml"
-  "dune" {build & >= "2.0.0"}
+  "dune" {>= "3.0"}
   "dune-configurator" {build}
   "odoc" {with-doc}
 ]
 build: [
-  ["dune" "subst"] {pinned}
+  ["dune" "subst"] {dev}
   [
     "dune"
     "build"
@@ -28,8 +28,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-depexts: [
-  ["zlib"] { os-distribution = "nixos" }
-  ["zlib1g-dev"] { os-family = "debian" | os-family = "ubuntu" }
-]
-dev-repo: "git+https://bitbucket.org/uog-bigraph/bigraph-tools/"
+dev-repo: "git+https://github.com/royangkr/bigraph-tools.git"

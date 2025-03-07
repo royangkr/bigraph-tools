@@ -17,7 +17,7 @@ and c1 = Ctrl.C ("Hospital", [ Ctrl.I 12; Ctrl.S "Church Street" ], 0)
 
 and c2 = Ctrl.C ("Bridge", [ Ctrl.F 3.6 ], 2)
 
-let ctrl_test = [ c0; c1; c2 ]
+(* let ctrl_test = [ c0; c1; c2 ] *)
 
 let nodes_test =
   List.fold_left

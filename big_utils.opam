@@ -3,22 +3,22 @@ opam-version: "2.0"
 version: "0.1.0"
 synopsis:
   "Command line tool to visualise the decompostions induced by a bigraph match."
-maintainer: ["michele.sevegnani@glasgow.ac.uk"]
-authors: ["Michele Sevegnani" "Blair Archibald"]
+maintainer: ["Roy Ang"]
+authors: ["Roy Ang"]
 license: "BSD-3-Clause"
 tags: [
   "bigraphs" "rewriting engine" "decomposition" "visualisation" "org:dcs"
 ]
-homepage: "http://www.dcs.gla.ac.uk/~michele/bigrapher.html"
-doc: "http://www.dcs.gla.ac.uk/~michele/doc/index.html"
+homepage: "https://github.com/royangkr/bigraph-tools"
+doc: "https://github.com/royangkr/bigraph-tools"
+bug-reports: "https://github.com/royangkr/bigraph-tools/issues"
 depends: [
-  "ocaml"
-  "dune" {build & >= "2.0.0"}
+  "dune" {>= "3.0"}
   "bigraph" {>= "1.3.3"}
   "odoc" {with-doc}
 ]
 build: [
-  ["dune" "subst"] {pinned}
+  ["dune" "subst"] {dev}
   [
     "dune"
     "build"
@@ -31,4 +31,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "git+https://bitbucket.org/uog-bigraph/bigraph-tools/"
+dev-repo: "git+https://github.com/royangkr/bigraph-tools.git"
