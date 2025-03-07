@@ -29,7 +29,6 @@ build: [
   ]
 ]
 depexts: [
-  "minisat" { os-distribution = "nixos" }
-  "minisat" { os-family = "ubuntu" }
+  ["minisat"] { os-distribution = "nixos" | os-family = "ubuntu" }
 ]
 dev-repo: "https://bitbucket.org/uog-bigraph/bigraph-tools/"
